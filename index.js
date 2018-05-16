@@ -1,52 +1,38 @@
+const express = require('express');
+const bodyParser = require('body-parser');
 const Sequelize = require('sequelize');
 
 const db = new Sequelize('blog', 'root', '', {
     host: 'localhost',
     dialect: 'mysql'
 });
-
-const article = db.define('article', {
-    titre: { type: Sequelize.STRING },
-    desc: { type: Sequelize.STRING }
-});
-
-article
-    .sync()
-    .then(() => {
-    article.create({
-    titre: 'Les cailloux',
-    desc: 'azertyuioigfdsfghjkjhgfdsqsfghjkoiugfdsdfghjkjhgv gfdthsfhsdhsg fgsdg qsg  drg dq'
-});
-})
-.then(() => {
-    article.create({
-    titre: 'Part Dieux',
-    desc: 'gergzeg  gse g z dgz eag qsgeggt   gegeq ge g egegaeg'
-});
-})
-.then(() => {
-    return article.findAll();
-})
-.then((users) => {
-    console.log(article);
-});
-
-
-const express = require('express');
-const bodyParser = require('body-parser');
 const app = express();
 
-app.set('view engine', 'pug');
-
-app.use(express.static('public'));
-
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
-
-app.get('/', (req, res) => {
-    res.render('homepage');
-
+const Article = db.define('article', {
+    title: { type: Sequelize.STRING },
+    content: { type: Sequelize.TEXT }
 });
 
+app.set('view engine', 'pug');
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.listen(3000);
+app.get('/', (req, res) => {
+    Article
+        .findAll()
+        .then((articles) => articles.map(article => article.dataValues))
+        .then((articles) => {
+            res.render('index', { articles });
+        });
+});
+
+app.post('/', (req, res) => {
+    const { title, content } = req.body;
+    Article
+        .sync()
+        .then(() => Article.create({ title, content }))
+        .then(() => res.redirect('/'));
+});
+
+app.listen(3000, () => {
+    console.log('Listening on port 3000');
+});
